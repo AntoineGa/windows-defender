@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM debian:jessie-slim
 
 LABEL maintainer "https://github.com/blacktop"
 
@@ -46,10 +46,6 @@ RUN buildDeps='ca-certificates \
   && go build -ldflags "-X main.Version=$(cat VERSION) -X main.BuildTime=$(date -u +%Y%m%d)" \
               -o /bin/avscan \
   && ls -lah /bin/avscan \
-  && echo "===> Clean up unnecessary files..." \
-  && apt-get purge -y --auto-remove $buildDeps $(apt-mark showauto) \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives /tmp/* /var/tmp/* /go /usr/local/go \
   && apt-get update -y \
   && apt-get upgrade -y \
   && apt-get install -y curl
