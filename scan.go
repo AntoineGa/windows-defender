@@ -15,9 +15,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/fatih/structs"
 	"github.com/gorilla/mux"
-	"github.com/maliceio/go-plugin-utils/database/elasticsearch"
 	"github.com/maliceio/go-plugin-utils/utils"
 	"github.com/maliceio/malice/utils/clitable"
 	"github.com/parnurzeal/gorequest"
@@ -208,7 +206,10 @@ func printMarkDownTable(windef WindowsDefender) {
 }
 
 func printStatus(resp gorequest.Response, body string, errs []error) {
+	fmt.Println(body)
 	fmt.Println(resp.Status)
+	fmt.Println(errs)
+	fmt.Println(len(errs))
 }
 
 func webService() {
@@ -283,7 +284,7 @@ func main() {
 		cli.BoolFlag{
 			Name:   "callback, c",
 			Usage:  "POST results to Malice webhook",
-			EnvVar: "MALICE_ENDPOINT",
+			EnvVar: "MALICE_CALLBACK",
 		},
 		cli.BoolFlag{
 			Name:   "proxy, x",
@@ -341,22 +342,14 @@ func main() {
 			windef := AvScan(c.Int("timeout"))
 			windef.Results.MarkDown = generateMarkDownTable(windef)
 
-			// upsert into Database
-			elasticsearch.InitElasticSearch(elastic)
-			elasticsearch.WritePluginResultsToDatabase(elasticsearch.PluginResults{
-				ID:       utils.Getopt("MALICE_SCANID", utils.GetSHA256(path)),
-				Name:     name,
-				Category: category,
-				Data:     structs.Map(windef.Results),
-			})
-
 			if c.Bool("table") {
 				fmt.Printf(windef.Results.MarkDown)
 			} else {
 				windef.Results.MarkDown = ""
 				windefJSON, err := json.Marshal(windef)
 				assert(err)
-				if c.Bool("post") {
+				if c.Bool("callback") {
+					fmt.Println("callback activated")
 					request := gorequest.New()
 					if c.Bool("proxy") {
 						request = gorequest.New().Proxy(os.Getenv("MALICE_PROXY"))
@@ -365,8 +358,6 @@ func main() {
 						Set("X-Malice-ID", utils.Getopt("MALICE_SCANID", utils.GetSHA256(path))).
 						Send(string(windefJSON)).
 						End(printStatus)
-
-					return nil
 				}
 				fmt.Println(string(windefJSON))
 			}
