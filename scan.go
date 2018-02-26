@@ -206,10 +206,7 @@ func printMarkDownTable(windef WindowsDefender) {
 }
 
 func printStatus(resp gorequest.Response, body string, errs []error) {
-	fmt.Println(body)
 	fmt.Println(resp.Status)
-	fmt.Println(errs)
-	fmt.Println(len(errs))
 }
 
 func webService() {
@@ -349,7 +346,7 @@ func main() {
 				windefJSON, err := json.Marshal(windef)
 				assert(err)
 				if c.Bool("callback") {
-					fmt.Println("callback activated")
+
 					request := gorequest.New()
 					if c.Bool("proxy") {
 						request = gorequest.New().Proxy(os.Getenv("MALICE_PROXY"))
