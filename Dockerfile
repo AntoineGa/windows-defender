@@ -7,7 +7,7 @@ LABEL malice.plugin.category="av"
 LABEL malice.plugin.mime="*"
 LABEL malice.plugin.docker.engine="*"
 
-ENV GO_VERSION 1.9.2
+ENV GO_VERSION 1.10
 
 COPY . /go/src/github.com/maliceio/malice-windows-defender
 RUN buildDeps='ca-certificates \
@@ -49,10 +49,13 @@ RUN buildDeps='ca-certificates \
   && echo "===> Clean up unnecessary files..." \
   && apt-get purge -y --auto-remove $buildDeps $(apt-mark showauto) \
   && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives /tmp/* /var/tmp/* /go /usr/local/go
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives /tmp/* /var/tmp/* /go /usr/local/go \
+  && apt-get update -y \
+  && apt-get upgrade -y \
+  && apt-get install -y curl
 
 # Add EICAR Test Virus File to malware folder
-ADD http://www.eicar.org/download/eicar.com.txt /malware/EICAR
+# ADD http://www.eicar.org/download/eicar.com.txt /malware/EICAR
 RUN  mkdir -p /opt/malice
 COPY update.sh /opt/malice/update
 
