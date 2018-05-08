@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"runtime"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -91,7 +92,7 @@ func RunCommand(ctx context.Context, cmd string, args ...string) (string, error)
 }
 
 // AvScan performs antivirus scan
-func AvScan(timeout int) WindowsDefender {
+func AvScan(timeout int, filepath string) WindowsDefender {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
@@ -103,7 +104,7 @@ func AvScan(timeout int) WindowsDefender {
 	// will change back to the /malware folder when func returns
 	defer os.Chdir("/malware")
 
-	results, err := ParseWinDefOutput(RunCommand(ctx, "./mpclient", path))
+	results, err := ParseWinDefOutput(RunCommand(ctx, "./mpclient", filepath))
 	assert(err)
 
 	return WindowsDefender{
@@ -246,7 +247,7 @@ func webAvScan(w http.ResponseWriter, r *http.Request) {
 
 	// Do AV scan
 	path = tmpfile.Name()
-	windef := AvScan(60)
+	windef := AvScan(60, path)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -297,7 +298,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:   "timeout",
-			Value:  60,
+			Value:  600,
 			Usage:  "malice plugin timeout (in seconds)",
 			EnvVar: "MALICE_TIMEOUT",
 		},
@@ -336,7 +337,14 @@ func main() {
 				assert(err)
 			}
 
-			windef := AvScan(c.Int("timeout"))
+			files, err := ioutil.ReadDir(path)
+			assert(err)
+			
+			for _, file := range files {
+				windef := AvScan(c.Int("timeout"), path.Join(path, file.Name()))
+			}
+
+			
 			windef.Results.MarkDown = generateMarkDownTable(windef)
 
 			if c.Bool("table") {
