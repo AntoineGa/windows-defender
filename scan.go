@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"runtime"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -219,6 +218,8 @@ func webService() {
 
 func webAvScan(w http.ResponseWriter, r *http.Request) {
 
+	var windef WindowsDefender
+
 	r.ParseMultipartForm(32 << 20)
 	file, header, err := r.FormFile("malware")
 	if err != nil {
@@ -247,7 +248,7 @@ func webAvScan(w http.ResponseWriter, r *http.Request) {
 
 	// Do AV scan
 	path = tmpfile.Name()
-	windef := AvScan(60, path)
+	windef = AvScan(60, path)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -324,6 +325,7 @@ func main() {
 	app.Action = func(c *cli.Context) error {
 
 		var err error
+		var windef WindowsDefender
 
 		if c.Bool("verbose") {
 			log.SetLevel(log.DebugLevel)
@@ -339,12 +341,11 @@ func main() {
 
 			files, err := ioutil.ReadDir(path)
 			assert(err)
-			
+
 			for _, file := range files {
-				windef := AvScan(c.Int("timeout"), path.Join(path, file.Name()))
+				windef = AvScan(c.Int("timeout"), path+file.Name())
 			}
 
-			
 			windef.Results.MarkDown = generateMarkDownTable(windef)
 
 			if c.Bool("table") {

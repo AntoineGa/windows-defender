@@ -16,7 +16,6 @@ RUN buildDeps='ca-certificates \
                build-essential \
                gcc-multilib \
                cabextract \
-               mercurial \
                git-core \
                unzip \
                wget' \
@@ -48,7 +47,7 @@ RUN buildDeps='ca-certificates \
   && ls -lah /bin/avscan \
   && apt-get update -y \
   && apt-get upgrade -y \
-  && apt-get install -y curl
+  && apt-get install -y curl zip
 
 # Add EICAR Test Virus File to malware folder
 # ADD http://www.eicar.org/download/eicar.com.txt /malware/EICAR
